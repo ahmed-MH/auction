@@ -1,14 +1,19 @@
 package com.jdk.encher.entity;
 
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "utilisateurs")
-public class Utilisateur {
+public class Utilisateur implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,71 +38,115 @@ public class Utilisateur {
 
     private int soldeCredit;
 
-    private boolean etatCompte; // true = actif, false = désactivé
+    private boolean etatCompte = true; // true = actif, false = désactivé
 
-    @OneToMany(mappedBy = "createur")
+    @OneToMany(mappedBy = "createur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Encher> enchersDefinies;
 
-    @ManyToMany(mappedBy = "participants")
+    @ManyToMany(mappedBy = "participants", fetch = FetchType.LAZY)
     private List<Encher> encheresParticipees;
 
-    @OneToMany(mappedBy = "utilisateur")
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Paiement> paiementsEffectues;
 
-    @OneToMany(mappedBy = "utilisateur")
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notificationRecues;
 
-    @OneToMany(mappedBy = "utilisateur")
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TransactionCredit> transactionsEffectuees;
 
-
-    // Constructeurs
-    public Utilisateur() {}
-
-    public Utilisateur(String nom, String email, String motDePasse, Role role, int soldeCredit, boolean etatCompte) {
-        this.nom = nom;
-        this.email = email;
-        this.motDePasse = motDePasse;
-        this.role = role;
-        this.soldeCredit = soldeCredit;
-        this.etatCompte = etatCompte;
+    // Implémentation de UserDetails
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
-    public Utilisateur(String nom, String email, String motDePasse, Role role, int soldeCredit, boolean etatCompte, List<Encher> enchersDefinies, List<Encher> encheresParticipees, List<Paiement> paiementsEffectues, List<Notification> notificationRecues, List<TransactionCredit> transactionsEffectuees) {
-        this.nom = nom;
-        this.email = email;
-        this.motDePasse = motDePasse;
-        this.role = role;
-        this.soldeCredit = soldeCredit;
-        this.etatCompte = etatCompte;
-        this.enchersDefinies = enchersDefinies;
-        this.encheresParticipees = encheresParticipees;
-        this.paiementsEffectues = paiementsEffectues;
-        this.notificationRecues = notificationRecues;
-        this.transactionsEffectuees = transactionsEffectuees;
+    @Override
+    public String getPassword() {
+        return this.motDePasse;
     }
 
-    // Getters & setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
 
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @Override
+    public boolean isAccountNonLocked() {
+        return this.etatCompte;
+    }
 
-    public String getMotDePasse() { return motDePasse; }
-    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    @Override
+    public boolean isEnabled() {
+        return this.etatCompte;
+    }
 
-    public int getSoldeCredit() { return soldeCredit; }
-    public void setSoldeCredit(int soldeCredit) { this.soldeCredit = soldeCredit; }
+    // Getters et Setters
+    public Long getId() {
+        return id;
+    }
 
-    public boolean isEtatCompte() { return etatCompte; }
-    public void setEtatCompte(boolean etatCompte) { this.etatCompte = etatCompte; }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getMotDePasse() {
+        return motDePasse;
+    }
+
+    public void setMotDePasse(String motDePasse) {
+        this.motDePasse = motDePasse;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public int getSoldeCredit() {
+        return soldeCredit;
+    }
+
+    public void setSoldeCredit(int soldeCredit) {
+        this.soldeCredit = soldeCredit;
+    }
+
+    public boolean isEtatCompte() {
+        return etatCompte;
+    }
+
+    public void setEtatCompte(boolean etatCompte) {
+        this.etatCompte = etatCompte;
+    }
 
     public List<Encher> getEnchersDefinies() {
         return enchersDefinies;
@@ -139,4 +188,3 @@ public class Utilisateur {
         this.transactionsEffectuees = transactionsEffectuees;
     }
 }
-
