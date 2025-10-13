@@ -8,6 +8,8 @@ import com.jdk.encher.entity.Role;
 import com.jdk.encher.entity.Utilisateur;
 import com.jdk.encher.repository.UtilisateurRepository;
 import com.jdk.encher.service.CustomUserDetailsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
 import java.util.Set;
-
+@Tag(name = "Authentication", description = "Gestion de l'authentification")
 @RestController
 @CrossOrigin
 @RequestMapping("/api/auth")
@@ -37,6 +39,7 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Operation(summary = "Connexion d'un utilisateur")
     @PostMapping("/authenticate")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
