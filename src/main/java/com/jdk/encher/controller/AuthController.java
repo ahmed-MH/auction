@@ -10,7 +10,8 @@ import com.jdk.encher.repository.UtilisateurRepository;
 import com.jdk.encher.service.CustomUserDetailsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,29 +20,27 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+
 @Tag(name = "Authentication", description = "Gestion de l'authentification")
 @RestController
-@CrossOrigin
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@CrossOrigin
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Operation(summary = "Connexion d'un utilisateur")
     @PostMapping("/authenticate")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
@@ -50,13 +49,15 @@ public class AuthController {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtil.generateToken(loginRequest.getEmail());
 
-        Utilisateur utilisateur = utilisateurRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        assert utilisateur != null;
+        String jwt = jwtUtil.generateToken(utilisateur.getEmail());
+
         return ResponseEntity.ok(new JwtResponse(
                 jwt,
+                "Bearer",
                 utilisateur.getId(),
                 utilisateur.getEmail(),
                 utilisateur.getNom(),
@@ -64,21 +65,44 @@ public class AuthController {
         ));
     }
 
+    @Operation(summary = "Inscription d'un utilisateur")
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+
         if (utilisateurRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("Error: Email is already in use!");
+            // On renvoie un JSON même pour l'erreur
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Erreur : cet email est déjà utilisé !");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(signUpRequest.getNom());
         utilisateur.setEmail(signUpRequest.getEmail());
         utilisateur.setMotDePasse(passwordEncoder.encode(signUpRequest.getPassword()));
-        utilisateur.setRole(Role.USER); // Par défaut
         utilisateur.setEtatCompte(true);
 
-        utilisateurRepository.save(utilisateur);
+        // Mapper les rôles reçus
+        if (signUpRequest.getRoles() != null && !signUpRequest.getRoles().isEmpty()) {
+            String roleStr = signUpRequest.getRoles().iterator().next().toUpperCase();
+            utilisateur.setRole(Role.valueOf(roleStr));
+        } else {
+            utilisateur.setRole(Role.USER);
+        }
 
-        return ResponseEntity.ok("User registered successfully!");
+        Utilisateur savedUser = utilisateurRepository.save(utilisateur);
+
+        // Réponse JSON pour le frontend
+        Map<String, Object> successResponse = new HashMap<>();
+        successResponse.put("message", "Inscription réussie !");
+        successResponse.put("user", Map.of(
+                "id", savedUser.getId(),
+                "nom", savedUser.getNom(),
+                "email", savedUser.getEmail(),
+                "role", savedUser.getRole().name()
+        ));
+
+        return ResponseEntity.ok(successResponse);
     }
+
 }
