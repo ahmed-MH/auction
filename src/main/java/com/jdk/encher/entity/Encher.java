@@ -44,6 +44,10 @@ public class Encher {
     private StatutEncher statut;
 
     @ManyToOne
+    @JoinColumn(name = "categorie_id", nullable = false)
+    private Categorie categorie;
+
+    @ManyToOne
     @JoinColumn(name = "gagnant_id", nullable = true)
     private Utilisateur gagnant;
 
