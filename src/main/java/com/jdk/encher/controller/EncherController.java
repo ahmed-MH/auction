@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -52,10 +53,13 @@ public class EncherController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Ajouter une image à une enchère")
-    @PostMapping("/{encherId}/images")
-    public ResponseEntity<Image> addImageToEnchere(@PathVariable Long encherId, @Valid @RequestBody Image image) {
-        return ResponseEntity.ok(encherService.addImageToEnchere(encherId, image));
+    @Operation(summary = "Uploader des images pour une enchère")
+    @PostMapping("/{encherId}/upload-images")
+    public ResponseEntity<List<Image>> uploadImages(
+            @PathVariable Long encherId,
+            @RequestParam("files") List<MultipartFile> files
+    ) {
+        return ResponseEntity.ok(encherService.uploadImages(encherId, files));
     }
 
     @Operation(summary = "Lister les images d’une enchère")

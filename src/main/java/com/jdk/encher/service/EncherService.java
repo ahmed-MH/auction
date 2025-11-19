@@ -8,14 +8,16 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class EncherService {
-
+    private final CloudinaryService cloudinaryService ;
     private final EncherRepository encherRepository;
     private final ImageRepository imageRepository;
 
@@ -52,6 +54,31 @@ public class EncherService {
         return savedEncher;
     }
 
+    public List<Image> uploadImages(Long encherId, List<MultipartFile> files) {
+        Encher encher = encherRepository.findById(encherId)
+                .orElseThrow(() -> new RuntimeException("Enchère non trouvée"));
+
+        if (encher.getImages() == null) {
+            encher.setImages(new ArrayList<>());
+        }
+
+        List<Image> savedImages = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            String url = cloudinaryService.uploadImage(file);
+
+            Image img = Image.builder()
+                    .url(url)
+                    .encher(encher)
+                    .build();
+
+            savedImages.add(imageRepository.save(img));
+        }
+
+        encher.getImages().addAll(savedImages);
+
+        return savedImages;
+    }
     /**
      * Mettre à jour une enchère
      */
