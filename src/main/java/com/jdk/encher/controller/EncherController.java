@@ -14,7 +14,7 @@ import java.util.List;
 
 @Tag(name = "Enchères", description = "Gestion des enchères et de leurs images")
 @RestController
-@RequestMapping("/api/encheres")
+@RequestMapping("/api/enchers")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class EncherController {

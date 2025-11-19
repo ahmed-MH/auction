@@ -1,5 +1,6 @@
 package com.jdk.encher.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,5 +22,6 @@ public class Image {
 
     @ManyToOne
     @JoinColumn(name = "encher_id")
+    @JsonBackReference
     private Encher encher;
 }
