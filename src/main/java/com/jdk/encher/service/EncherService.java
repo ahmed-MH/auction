@@ -1,145 +1,172 @@
 package com.jdk.encher.service;
 
-import com.jdk.encher.entity.Encher;
-import com.jdk.encher.entity.Image;
+import com.jdk.encher.dto.EncherCreateDTO;
+import com.jdk.encher.dto.EncherResponseDTO;
+import com.jdk.encher.dto.EncherUpdateDTO;
+import com.jdk.encher.dto.ImageDTO;
+import com.jdk.encher.entity.*;
+import com.jdk.encher.repository.CategorieRepository;
 import com.jdk.encher.repository.EncherRepository;
 import com.jdk.encher.repository.ImageRepository;
+import com.jdk.encher.repository.UtilisateurRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class EncherService {
-    private final CloudinaryService cloudinaryService ;
+
+    private final CloudinaryService cloudinaryService;
     private final EncherRepository encherRepository;
     private final ImageRepository imageRepository;
+    private final CategorieRepository categorieRepository;
+    private final UtilisateurRepository utilisateurRepository;
 
-    /**
-     * Récupérer toutes les enchères
-     */
+    // ------------------------------------------------------------
+    // 🔹 Convert Entity → DTO
+    // ------------------------------------------------------------
+    private EncherResponseDTO toDto(Encher encher) {
+        return EncherResponseDTO.builder()
+                .id(encher.getId())
+                .nomProduit(encher.getNomProduit())
+                .description(encher.getDescription())
+                .dateDebut(encher.getDateDebut())
+                .dateFin(encher.getDateFin())
+                .prixDepart(encher.getPrixDepart())
+                .montantActuel(encher.getMontantActuel())
+                .statut(encher.getStatut())
+                .categorieId(encher.getCategorie() != null ? encher.getCategorie().getId() : null)
+                .createurId(encher.getCreateur() != null ? encher.getCreateur().getId() : null)
+                .gagnantId(encher.getGagnant() != null ? encher.getGagnant().getId() : null)
+                // ✅ ADD THIS: Map images to imageUrls
+                .imageUrls(encher.getImages() != null
+                        ? encher.getImages().stream()
+                        .map(Image::getUrl)
+                        .collect(Collectors.toList())
+                        : new ArrayList<>())
+                .build();
+    }
+    // ------------------------------------------------------------
+    // 🔹 Récupérer tout
+    // ------------------------------------------------------------
     @Transactional(readOnly = true)
-    public List<Encher> getAllEncheres() {
-        return encherRepository.findAll();
+    public List<EncherResponseDTO> getAllEncheres() {
+        return encherRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
-    /**
-     * Récupérer une enchère par ID
-     */
+    // ------------------------------------------------------------
+    // 🔹 Récupérer par ID
+    // ------------------------------------------------------------
     @Transactional(readOnly = true)
-    public Encher getEnchereById(Long id) {
+    public EncherResponseDTO getEnchereById(Long id) {
         return encherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable avec ID : " + id));
+                .map(this::toDto)
+                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
     }
 
-    /**
-     * Créer une nouvelle enchère (avec ou sans images)
-     */
-    public Encher createEnchere(Encher encher) {
-        Encher savedEncher = encherRepository.save(encher);
+    // ------------------------------------------------------------
+    // 🔹 Créer enchère
+    // ------------------------------------------------------------
+    public EncherResponseDTO createEnchere(EncherCreateDTO dto) {
 
-        if (encher.getImages() != null && !encher.getImages().isEmpty()) {
-            encher.getImages().forEach(image -> {
-                image.setEncher(savedEncher);
-                imageRepository.save(image);
-            });
+        Categorie categorie = categorieRepository.findById(dto.getCategorieId())
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie introuvable"));
+
+        Utilisateur createur = utilisateurRepository.findById(dto.getCreateurId())
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur créateur introuvable"));
+
+        Encher encher = Encher.builder()
+                .nomProduit(dto.getNomProduit())
+                .description(dto.getDescription())
+                .dateDebut(dto.getDateDebut())
+                .dateFin(dto.getDateFin())
+                .prixDepart(dto.getPrixDepart())
+                .montantActuel(dto.getPrixDepart())
+                .statut(StatutEncher.EN_COURS)
+                .categorie(categorie)
+                .createur(createur)
+                .build();
+
+        Encher saved = encherRepository.save(encher);
+
+        // ✅ ADD THIS: Save image URLs from Cloudinary
+        if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+            List<Image> images = new ArrayList<>();
+            for (ImageDTO imageDTO : dto.getImages()) { // ✅ Changed from Image to ImageDTO
+                Image img = Image.builder()
+                        .url(imageDTO.getUrl())
+                        .encher(saved)
+                        .build();
+                images.add(imageRepository.save(img));
+            }
+            saved.setImages(images);
         }
 
-        return savedEncher;
+        return toDto(saved);
     }
 
-    public List<Image> uploadImages(Long encherId, List<MultipartFile> files) {
-        Encher encher = encherRepository.findById(encherId)
-                .orElseThrow(() -> new RuntimeException("Enchère non trouvée"));
+    // ------------------------------------------------------------
+    // 🔹 Update enchère
+    // ------------------------------------------------------------
+    public EncherResponseDTO updateEnchere(Long id, EncherUpdateDTO dto) {
 
-        if (encher.getImages() == null) {
-            encher.setImages(new ArrayList<>());
-        }
-
-        List<Image> savedImages = new ArrayList<>();
-
-        for (MultipartFile file : files) {
-            String url = cloudinaryService.uploadImage(file);
-
-            Image img = Image.builder()
-                    .url(url)
-                    .encher(encher)
-                    .build();
-
-            savedImages.add(imageRepository.save(img));
-        }
-
-        encher.getImages().addAll(savedImages);
-
-        return savedImages;
-    }
-    /**
-     * Mettre à jour une enchère
-     */
-    public Encher updateEnchere(Long id, Encher updatedEncher) {
         Encher existing = encherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable avec ID : " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
 
-        existing.setNomProduit(updatedEncher.getNomProduit());
-        existing.setDescription(updatedEncher.getDescription());
-        existing.setDateDebut(updatedEncher.getDateDebut());
-        existing.setDateFin(updatedEncher.getDateFin());
-        existing.setPrixDepart(updatedEncher.getPrixDepart());
-        existing.setMontantActuel(updatedEncher.getMontantActuel());
-        existing.setStatut(updatedEncher.getStatut());
-        existing.setCreateur(updatedEncher.getCreateur());
-        existing.setGagnant(updatedEncher.getGagnant());
+        existing.setNomProduit(dto.getNomProduit());
+        existing.setDescription(dto.getDescription());
+        existing.setDateDebut(dto.getDateDebut());
+        existing.setDateFin(dto.getDateFin());
+        existing.setPrixDepart(dto.getPrixDepart());
+        existing.setMontantActuel(dto.getMontantActuel());
+        existing.setStatut(dto.getStatut());
 
-        // Gestion des images
-        if (updatedEncher.getImages() != null) {
-            imageRepository.deleteAll(existing.getImages());
-
-            updatedEncher.getImages().forEach(image -> {
-                image.setEncher(existing);
-                imageRepository.save(image);
-            });
+        if (dto.getCategorieId() != null) {
+            Categorie categorie = categorieRepository.findById(dto.getCategorieId())
+                    .orElseThrow(() -> new EntityNotFoundException("Catégorie introuvable"));
+            existing.setCategorie(categorie);
         }
 
-        return encherRepository.save(existing);
+        if (dto.getGagnantId() != null) {
+            Utilisateur gagnant = utilisateurRepository.findById(dto.getGagnantId())
+                    .orElseThrow(() -> new EntityNotFoundException("Gagnant introuvable"));
+            existing.setGagnant(gagnant);
+        }
+
+        Encher saved = encherRepository.save(existing);
+        return toDto(saved);
     }
 
-    /**
-     * Supprimer une enchère
-     */
+    // ------------------------------------------------------------
+    // 🔹 Delete enchère
+    // ------------------------------------------------------------
     public void deleteEnchere(Long id) {
         Encher existing = encherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable avec ID : " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
 
-        // Supprime d'abord les images associées
         imageRepository.deleteAll(existing.getImages());
         encherRepository.delete(existing);
     }
 
-    /**
-     * Ajouter une image à une enchère existante
-     */
-    public Image addImageToEnchere(Long encherId, Image image) {
-        Encher encher = encherRepository.findById(encherId)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable avec ID : " + encherId));
-
-        image.setEncher(encher);
-        return imageRepository.save(image);
-    }
-
-    /**
-     * Lister toutes les images d’une enchère
-     */
+    // ------------------------------------------------------------
+    // 🔹 Lister les images
+    // ------------------------------------------------------------
     @Transactional(readOnly = true)
-    public List<Image> getImagesByEnchere(Long encherId) {
-        Encher encher = encherRepository.findById(encherId)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable avec ID : " + encherId));
+    public List<String> getImagesByEnchere(Long encherId) {
 
-        return encher.getImages();
+        Encher e = encherRepository.findById(encherId)
+                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable"));
+
+        return e.getImages().stream().map(Image::getUrl).toList();
     }
 }
