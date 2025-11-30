@@ -42,7 +42,7 @@ public class EncherService {
                 .prixDepart(encher.getPrixDepart())
                 .montantActuel(encher.getMontantActuel())
                 .statut(encher.getStatut())
-                .categorieId(encher.getCategorie() != null ? encher.getCategorie().getId() : null)
+                .categorie(encher.getCategorie())
                 .createurId(encher.getCreateur() != null ? encher.getCreateur().getId() : null)
                 .gagnantId(encher.getGagnant() != null ? encher.getGagnant().getId() : null)
                 // ✅ ADD THIS: Map images to imageUrls
@@ -169,4 +169,18 @@ public class EncherService {
 
         return e.getImages().stream().map(Image::getUrl).toList();
     }
+
+    public List<EncherResponseDTO> getEncheresByCategorie(Long categorieId) {
+        return encherRepository.findByCategorieId(categorieId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+    public List<EncherResponseDTO> getEnchersByUtilisateur(Long userId) {
+        return encherRepository.findByCreateurId(userId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
 }

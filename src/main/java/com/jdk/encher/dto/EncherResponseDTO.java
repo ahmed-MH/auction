@@ -1,5 +1,6 @@
 package com.jdk.encher.dto;
 
+import com.jdk.encher.entity.Categorie;
 import com.jdk.encher.entity.StatutEncher;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class EncherResponseDTO {
 
     private StatutEncher statut;
 
+    private Categorie categorie;
     private Long categorieId;
     private Long createurId;
     private Long gagnantId;

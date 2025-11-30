@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/encheres")
+@RequestMapping("/api/enchers")
 @CrossOrigin("*")
 public class EnchereController {
 
@@ -72,6 +72,18 @@ public class EnchereController {
     @GetMapping("/{id}/images")
     public ResponseEntity<List<String>> getImages(@PathVariable Long id) {
         return ResponseEntity.ok(encherService.getImagesByEnchere(id));
+    }
+    // -----------------------------------------------------
+    // 🔹 GET ENCHERES BY CATEGORIE
+    // -----------------------------------------------------
+    @GetMapping("/categorie/{categorieId}")
+    public ResponseEntity<List<EncherResponseDTO>> getByCategorie(@PathVariable Long categorieId) {
+        return ResponseEntity.ok(encherService.getEncheresByCategorie(categorieId));
+    }
+
+    @GetMapping("/utilisateur/{id}")
+    public ResponseEntity<List<EncherResponseDTO>> getByUtilisateur(@PathVariable Long id) {
+        return ResponseEntity.ok(encherService.getEnchersByUtilisateur(id));
     }
 
 }

@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/enchers/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
                         .requestMatchers("/api/categories/**").permitAll()
+                        .requestMatchers("/api/participations/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

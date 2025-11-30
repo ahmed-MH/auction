@@ -43,9 +43,6 @@ public class Utilisateur implements UserDetails {
     @OneToMany(mappedBy = "createur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Encher> enchersDefinies;
 
-    @ManyToMany(mappedBy = "participants", fetch = FetchType.LAZY)
-    private List<Encher> encheresParticipees;
-
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Paiement> paiementsEffectues;
 
@@ -154,14 +151,6 @@ public class Utilisateur implements UserDetails {
 
     public void setEnchersDefinies(List<Encher> enchersDefinies) {
         this.enchersDefinies = enchersDefinies;
-    }
-
-    public List<Encher> getEncheresParticipees() {
-        return encheresParticipees;
-    }
-
-    public void setEncheresParticipees(List<Encher> encheresParticipees) {
-        this.encheresParticipees = encheresParticipees;
     }
 
     public List<Paiement> getPaiementsEffectues() {

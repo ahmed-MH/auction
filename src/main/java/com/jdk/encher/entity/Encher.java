@@ -56,13 +56,9 @@ public class Encher {
     @JoinColumn(name = "createur_id")
     private Utilisateur createur;
 
-    @ManyToMany
-    @JoinTable(
-            name = "participants_encheres",
-            joinColumns = @JoinColumn(name = "encher_id"),
-            inverseJoinColumns = @JoinColumn(name = "utilisateur_id")
-    )
-    private List<Utilisateur> participants;
+    @OneToMany(mappedBy = "encher", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Participation> participations;
 
     @OneToOne(mappedBy = "encher", cascade = CascadeType.ALL)
     private Historique historique;
@@ -159,14 +155,6 @@ public class Encher {
         this.createur = createur;
     }
 
-    public List<Utilisateur> getParticipants() {
-        return participants;
-    }
-
-    public void setParticipants(List<Utilisateur> participants) {
-        this.participants = participants;
-    }
-
     public Historique getHistorique() {
         return historique;
     }
@@ -189,5 +177,13 @@ public class Encher {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public List<Participation> getParticipations() {
+        return participations;
+    }
+
+    public void setParticipations(List<Participation> participations) {
+        this.participations = participations;
     }
 }
