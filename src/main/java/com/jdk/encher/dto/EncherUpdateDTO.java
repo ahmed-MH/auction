@@ -3,6 +3,7 @@ package com.jdk.encher.dto;
 import com.jdk.encher.entity.StatutEncher;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class EncherUpdateDTO {
@@ -14,5 +15,6 @@ public class EncherUpdateDTO {
     private Double montantActuel;
     private StatutEncher statut;
     private Long categorieId;
-    private Long gagnantId; // optional
+    private Long gagnantId;
+    private List<ImageDTO> images;
 }

@@ -3,6 +3,7 @@ package com.jdk.encher.controller;
 import com.jdk.encher.dto.EncherCreateDTO;
 import com.jdk.encher.dto.EncherResponseDTO;
 import com.jdk.encher.dto.EncherUpdateDTO;
+import com.jdk.encher.entity.Encher;
 import com.jdk.encher.entity.Image;
 import com.jdk.encher.service.EncherService;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,8 @@ public class EnchereController {
             @PathVariable Long id,
             @RequestBody EncherUpdateDTO dto
     ) {
-        return ResponseEntity.ok(encherService.updateEnchere(id, dto));
+        // Convert to DTO
+        return ResponseEntity.ok(encherService.updateEnchereDTO(id, dto));
     }
 
     // -----------------------------------------------------
