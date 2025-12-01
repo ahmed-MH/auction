@@ -36,8 +36,9 @@ public class EnchereController {
     // -----------------------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<EncherResponseDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(encherService.getEnchereById(id));
+        return ResponseEntity.ok(encherService.checkAndCloseEnchere(id));
     }
+
 
     // -----------------------------------------------------
     // 🔹 CREATE ENCHERE

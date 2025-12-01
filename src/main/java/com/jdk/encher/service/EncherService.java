@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -214,5 +215,29 @@ public class EncherService {
                 .map(this::toDto)
                 .toList();
     }
+    @Transactional
+    public EncherResponseDTO checkAndCloseEnchere(Long encherId) {
+        Encher encher = encherRepository.findById(encherId)
+                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + encherId));
+
+        // Vérifier si l'enchère est déjà terminée
+        if (encher.getDateFin().isBefore(LocalDateTime.now()) && encher.getStatut() != StatutEncher.TERMINEE) {
+            encher.setStatut(StatutEncher.TERMINEE);
+
+            // Déterminer le gagnant (participation avec le plus grand montant)
+            Participation gagnantParticipation = encher.getParticipations().stream()
+                    .max((p1, p2) -> Double.compare(p1.getMontant(), p2.getMontant()))
+                    .orElse(null);
+
+            if (gagnantParticipation != null) {
+                encher.setGagnant(gagnantParticipation.getUtilisateur());
+            }
+
+            encherRepository.save(encher);
+        }
+
+        return toDto(encher);
+    }
+
 
 }
