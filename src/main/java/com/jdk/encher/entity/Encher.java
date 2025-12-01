@@ -32,6 +32,7 @@ public class Encher {
     private String nomProduit;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @NotNull

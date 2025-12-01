@@ -53,6 +53,10 @@ public class EncherService {
                         : new ArrayList<>())
                 .build();
     }
+    public EncherResponseDTO updateEnchereDTO(Long id, EncherUpdateDTO dto) {
+        Encher updated = updateEnchere(id, dto);
+        return toDto(updated);
+    }
     // ------------------------------------------------------------
     // 🔹 Récupérer tout
     // ------------------------------------------------------------
@@ -118,34 +122,62 @@ public class EncherService {
     // ------------------------------------------------------------
     // 🔹 Update enchère
     // ------------------------------------------------------------
-    public EncherResponseDTO updateEnchere(Long id, EncherUpdateDTO dto) {
+    public Encher updateEnchere(Long id, EncherUpdateDTO dto) {
 
         Encher existing = encherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
+                .orElseThrow(() -> new RuntimeException("Encher not found"));
 
-        existing.setNomProduit(dto.getNomProduit());
-        existing.setDescription(dto.getDescription());
-        existing.setDateDebut(dto.getDateDebut());
-        existing.setDateFin(dto.getDateFin());
-        existing.setPrixDepart(dto.getPrixDepart());
-        existing.setMontantActuel(dto.getMontantActuel());
-        existing.setStatut(dto.getStatut());
+        // 🔹 Mise à jour des champs simples
+        if (dto.getNomProduit() != null) existing.setNomProduit(dto.getNomProduit());
+        if (dto.getDescription() != null) existing.setDescription(dto.getDescription());
+        if (dto.getDateDebut() != null) existing.setDateDebut(dto.getDateDebut());
+        if (dto.getDateFin() != null) existing.setDateFin(dto.getDateFin());
+        if (dto.getPrixDepart() != null) {
+            existing.setPrixDepart(dto.getPrixDepart());
+            existing.setMontantActuel(dto.getPrixDepart()); // 🔹 MontantActuel = PrixDepart
+        }
+        // Ne pas prendre le montantActuel depuis le DTO, il sera toujours égal au prixDepart
+        // if (dto.getMontantActuel() != null) existing.setMontantActuel(dto.getMontantActuel());
 
+        if (dto.getStatut() != null) existing.setStatut(dto.getStatut());
+
+        // 🔹 Catégorie
         if (dto.getCategorieId() != null) {
-            Categorie categorie = categorieRepository.findById(dto.getCategorieId())
-                    .orElseThrow(() -> new EntityNotFoundException("Catégorie introuvable"));
-            existing.setCategorie(categorie);
+            Categorie cat = categorieRepository.findById(dto.getCategorieId())
+                    .orElseThrow(() -> new RuntimeException("Categorie not found"));
+            existing.setCategorie(cat);
         }
 
+        // 🔹 Gagnant
         if (dto.getGagnantId() != null) {
             Utilisateur gagnant = utilisateurRepository.findById(dto.getGagnantId())
-                    .orElseThrow(() -> new EntityNotFoundException("Gagnant introuvable"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             existing.setGagnant(gagnant);
         }
 
-        Encher saved = encherRepository.save(existing);
-        return toDto(saved);
+        // 🔥 Mise à jour des IMAGES
+        if (dto.getImages() != null) {
+
+            // Supprimer les anciennes images
+            if (existing.getImages() != null) {
+                imageRepository.deleteAll(existing.getImages());
+                existing.getImages().clear(); // Vider la collection Hibernate
+            }
+
+            // Ajouter les nouvelles images
+            for (ImageDTO imgDto : dto.getImages()) {
+                if (imgDto.getUrl() == null || imgDto.getUrl().isEmpty()) continue;
+                Image img = new Image();
+                img.setUrl(imgDto.getUrl());
+                img.setEncher(existing); // Relation bidirectionnelle
+                imageRepository.save(img);
+                existing.getImages().add(img);
+            }
+        }
+
+        return encherRepository.save(existing);
     }
+
 
     // ------------------------------------------------------------
     // 🔹 Delete enchère
