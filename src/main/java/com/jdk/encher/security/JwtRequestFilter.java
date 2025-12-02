@@ -33,10 +33,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private CustomUserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+
+        // 🔹 Ignorer certaines routes
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/auth/") || path.startsWith("/swagger-ui/") || path.startsWith("/v3/api-docs/")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         String username = null;
@@ -53,29 +58,19 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.validateToken(jwtToken, username)) {
                     UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request));
-
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
 
-        } catch (ExpiredJwtException ex) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("⚠️ Token expiré");
-            return;
-        } catch (SignatureException | MalformedJwtException ex) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("❌ Token invalide");
-            return;
         } catch (Exception ex) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("🚨 Erreur d’authentification JWT : " + ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Erreur JWT : " + ex.getMessage());
             return;
         }
 
         chain.doFilter(request, response);
     }
+
 }
