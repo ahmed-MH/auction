@@ -1,12 +1,12 @@
 package com.jdk.encher.service;
 
-import com.jdk.encher.dto.EncherCreateDTO;
-import com.jdk.encher.dto.EncherResponseDTO;
-import com.jdk.encher.dto.EncherUpdateDTO;
+import com.jdk.encher.dto.EnchereCreateDTO;
+import com.jdk.encher.dto.EnchereResponseDTO;
+import com.jdk.encher.dto.EnchereUpdateDTO;
 import com.jdk.encher.dto.ImageDTO;
 import com.jdk.encher.entity.*;
 import com.jdk.encher.repository.CategorieRepository;
-import com.jdk.encher.repository.EncherRepository;
+import com.jdk.encher.repository.EnchereRepository;
 import com.jdk.encher.repository.ImageRepository;
 import com.jdk.encher.repository.UtilisateurRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class EncherService {
+public class EnchereService {
 
     private final CloudinaryService cloudinaryService;
-    private final EncherRepository encherRepository;
+    private final EnchereRepository enchereRepository;
     private final ImageRepository imageRepository;
     private final CategorieRepository categorieRepository;
     private final UtilisateurRepository utilisateurRepository;
@@ -33,37 +33,39 @@ public class EncherService {
     // ------------------------------------------------------------
     // 🔹 Convert Entity → DTO
     // ------------------------------------------------------------
-    private EncherResponseDTO toDto(Encher encher) {
-        return EncherResponseDTO.builder()
-                .id(encher.getId())
-                .nomProduit(encher.getNomProduit())
-                .description(encher.getDescription())
-                .dateDebut(encher.getDateDebut())
-                .dateFin(encher.getDateFin())
-                .prixDepart(encher.getPrixDepart())
-                .montantActuel(encher.getMontantActuel())
-                .statut(encher.getStatut())
-                .categorie(encher.getCategorie())
-                .createurId(encher.getCreateur() != null ? encher.getCreateur().getId() : null)
-                .gagnantId(encher.getGagnant() != null ? encher.getGagnant().getId() : null)
+    private EnchereResponseDTO toDto(Enchere enchere) {
+        return EnchereResponseDTO.builder()
+                .id(enchere.getId())
+                .nomProduit(enchere.getNomProduit())
+                .description(enchere.getDescription())
+                .dateDebut(enchere.getDateDebut())
+                .dateFin(enchere.getDateFin())
+                .prixDepart(enchere.getPrixDepart())
+                .montantActuel(enchere.getMontantActuel())
+                .statut(enchere.getStatut())
+                .categorie(enchere.getCategorie())
+                .createurId(enchere.getCreateur() != null ? enchere.getCreateur().getId() : null)
+                .gagnantId(enchere.getGagnant() != null ? enchere.getGagnant().getId() : null)
                 // ✅ ADD THIS: Map images to imageUrls
-                .imageUrls(encher.getImages() != null
-                        ? encher.getImages().stream()
-                        .map(Image::getUrl)
-                        .collect(Collectors.toList())
+                .imageUrls(enchere.getImages() != null
+                        ? enchere.getImages().stream()
+                                .map(Image::getUrl)
+                                .collect(Collectors.toList())
                         : new ArrayList<>())
                 .build();
     }
-    public EncherResponseDTO updateEnchereDTO(Long id, EncherUpdateDTO dto) {
-        Encher updated = updateEnchere(id, dto);
+
+    public EnchereResponseDTO updateEnchereDTO(Long id, EnchereUpdateDTO dto) {
+        Enchere updated = updateEnchere(id, dto);
         return toDto(updated);
     }
+
     // ------------------------------------------------------------
     // 🔹 Récupérer tout
     // ------------------------------------------------------------
     @Transactional(readOnly = true)
-    public List<EncherResponseDTO> getAllEncheres() {
-        return encherRepository.findAll()
+    public List<EnchereResponseDTO> getAllEncheres() {
+        return enchereRepository.findAll()
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -73,8 +75,8 @@ public class EncherService {
     // 🔹 Récupérer par ID
     // ------------------------------------------------------------
     @Transactional(readOnly = true)
-    public EncherResponseDTO getEnchereById(Long id) {
-        return encherRepository.findById(id)
+    public EnchereResponseDTO getEnchereById(Long id) {
+        return enchereRepository.findById(id)
                 .map(this::toDto)
                 .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
     }
@@ -82,7 +84,7 @@ public class EncherService {
     // ------------------------------------------------------------
     // 🔹 Créer enchère
     // ------------------------------------------------------------
-    public EncherResponseDTO createEnchere(EncherCreateDTO dto) {
+    public EnchereResponseDTO createEnchere(EnchereCreateDTO dto) {
 
         Categorie categorie = categorieRepository.findById(dto.getCategorieId())
                 .orElseThrow(() -> new EntityNotFoundException("Catégorie introuvable"));
@@ -90,19 +92,19 @@ public class EncherService {
         Utilisateur createur = utilisateurRepository.findById(dto.getCreateurId())
                 .orElseThrow(() -> new EntityNotFoundException("Utilisateur créateur introuvable"));
 
-        Encher encher = Encher.builder()
+        Enchere enchere = Enchere.builder()
                 .nomProduit(dto.getNomProduit())
                 .description(dto.getDescription())
                 .dateDebut(dto.getDateDebut())
                 .dateFin(dto.getDateFin())
                 .prixDepart(dto.getPrixDepart())
                 .montantActuel(dto.getPrixDepart())
-                .statut(StatutEncher.EN_COURS)
+                .statut(StatutEnchere.EN_COURS)
                 .categorie(categorie)
                 .createur(createur)
                 .build();
 
-        Encher saved = encherRepository.save(encher);
+        Enchere saved = enchereRepository.save(enchere);
 
         // ✅ ADD THIS: Save image URLs from Cloudinary
         if (dto.getImages() != null && !dto.getImages().isEmpty()) {
@@ -110,7 +112,7 @@ public class EncherService {
             for (ImageDTO imageDTO : dto.getImages()) { // ✅ Changed from Image to ImageDTO
                 Image img = Image.builder()
                         .url(imageDTO.getUrl())
-                        .encher(saved)
+                        .enchere(saved)
                         .build();
                 images.add(imageRepository.save(img));
             }
@@ -123,24 +125,31 @@ public class EncherService {
     // ------------------------------------------------------------
     // 🔹 Update enchère
     // ------------------------------------------------------------
-    public Encher updateEnchere(Long id, EncherUpdateDTO dto) {
+    public Enchere updateEnchere(Long id, EnchereUpdateDTO dto) {
 
-        Encher existing = encherRepository.findById(id)
+        Enchere existing = enchereRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Encher not found"));
 
         // 🔹 Mise à jour des champs simples
-        if (dto.getNomProduit() != null) existing.setNomProduit(dto.getNomProduit());
-        if (dto.getDescription() != null) existing.setDescription(dto.getDescription());
-        if (dto.getDateDebut() != null) existing.setDateDebut(dto.getDateDebut());
-        if (dto.getDateFin() != null) existing.setDateFin(dto.getDateFin());
+        if (dto.getNomProduit() != null)
+            existing.setNomProduit(dto.getNomProduit());
+        if (dto.getDescription() != null)
+            existing.setDescription(dto.getDescription());
+        if (dto.getDateDebut() != null)
+            existing.setDateDebut(dto.getDateDebut());
+        if (dto.getDateFin() != null)
+            existing.setDateFin(dto.getDateFin());
         if (dto.getPrixDepart() != null) {
             existing.setPrixDepart(dto.getPrixDepart());
             existing.setMontantActuel(dto.getPrixDepart()); // 🔹 MontantActuel = PrixDepart
         }
-        // Ne pas prendre le montantActuel depuis le DTO, il sera toujours égal au prixDepart
-        // if (dto.getMontantActuel() != null) existing.setMontantActuel(dto.getMontantActuel());
+        // Ne pas prendre le montantActuel depuis le DTO, il sera toujours égal au
+        // prixDepart
+        // if (dto.getMontantActuel() != null)
+        // existing.setMontantActuel(dto.getMontantActuel());
 
-        if (dto.getStatut() != null) existing.setStatut(dto.getStatut());
+        if (dto.getStatut() != null)
+            existing.setStatut(dto.getStatut());
 
         // 🔹 Catégorie
         if (dto.getCategorieId() != null) {
@@ -167,28 +176,28 @@ public class EncherService {
 
             // Ajouter les nouvelles images
             for (ImageDTO imgDto : dto.getImages()) {
-                if (imgDto.getUrl() == null || imgDto.getUrl().isEmpty()) continue;
+                if (imgDto.getUrl() == null || imgDto.getUrl().isEmpty())
+                    continue;
                 Image img = new Image();
                 img.setUrl(imgDto.getUrl());
-                img.setEncher(existing); // Relation bidirectionnelle
+                img.setEnchere(existing); // Relation bidirectionnelle
                 imageRepository.save(img);
                 existing.getImages().add(img);
             }
         }
 
-        return encherRepository.save(existing);
+        return enchereRepository.save(existing);
     }
-
 
     // ------------------------------------------------------------
     // 🔹 Delete enchère
     // ------------------------------------------------------------
     public void deleteEnchere(Long id) {
-        Encher existing = encherRepository.findById(id)
+        Enchere existing = enchereRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
 
         imageRepository.deleteAll(existing.getImages());
-        encherRepository.delete(existing);
+        enchereRepository.delete(existing);
     }
 
     // ------------------------------------------------------------
@@ -197,47 +206,59 @@ public class EncherService {
     @Transactional(readOnly = true)
     public List<String> getImagesByEnchere(Long encherId) {
 
-        Encher e = encherRepository.findById(encherId)
+        Enchere e = enchereRepository.findById(encherId)
                 .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable"));
 
         return e.getImages().stream().map(Image::getUrl).toList();
     }
 
-    public List<EncherResponseDTO> getEncheresByCategorie(Long categorieId) {
-        return encherRepository.findByCategorieId(categorieId)
+    public List<EnchereResponseDTO> getEncheresByCategorie(Long categorieId) {
+        return enchereRepository.findByCategorieId(categorieId)
                 .stream()
                 .map(this::toDto)
                 .toList();
     }
-    public List<EncherResponseDTO> getEnchersByUtilisateur(Long userId) {
-        return encherRepository.findByCreateurId(userId)
+
+    public List<EnchereResponseDTO> getEnchersByUtilisateur(Long userId) {
+        return enchereRepository.findByCreateurId(userId)
                 .stream()
                 .map(this::toDto)
                 .toList();
     }
+
     @Transactional
-    public EncherResponseDTO checkAndCloseEnchere(Long encherId) {
-        Encher encher = encherRepository.findById(encherId)
+    public EnchereResponseDTO checkAndCloseEnchere(Long encherId) {
+        Enchere enchere = enchereRepository.findById(encherId)
                 .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + encherId));
 
         // Vérifier si l'enchère est déjà terminée
-        if (encher.getDateFin().isBefore(LocalDateTime.now()) && encher.getStatut() != StatutEncher.TERMINEE) {
-            encher.setStatut(StatutEncher.TERMINEE);
+        if (enchere.getDateFin().isBefore(LocalDateTime.now()) && enchere.getStatut() != StatutEnchere.TERMINEE) {
+            enchere.setStatut(StatutEnchere.TERMINEE);
 
             // Déterminer le gagnant (participation avec le plus grand montant)
-            Participation gagnantParticipation = encher.getParticipations().stream()
+            Participation gagnantParticipation = enchere.getParticipations().stream()
                     .max((p1, p2) -> Double.compare(p1.getMontant(), p2.getMontant()))
                     .orElse(null);
 
             if (gagnantParticipation != null) {
-                encher.setGagnant(gagnantParticipation.getUtilisateur());
+                Utilisateur gagnant = gagnantParticipation.getUtilisateur();
+                enchere.setGagnant(gagnant);
+
+                // 💰 TRANSFERT DES CRÉDITS AU VENDEUR (CRÉATEUR)
+                Utilisateur vendeur = enchere.getCreateur();
+                if (vendeur != null) {
+                    // Le montant a déjà été déduit du gagnant lors de l'enchère ("bloqué")
+                    // On ne fait que le transférer au vendeur
+                    double montantFinal = gagnantParticipation.getMontant();
+                    vendeur.setSoldeCredit(vendeur.getSoldeCredit() + (int) montantFinal);
+                    utilisateurRepository.save(vendeur);
+                }
             }
 
-            encherRepository.save(encher);
+            enchereRepository.save(enchere);
         }
 
-        return toDto(encher);
+        return toDto(enchere);
     }
-
 
 }

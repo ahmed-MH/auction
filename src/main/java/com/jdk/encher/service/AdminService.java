@@ -4,7 +4,7 @@ import com.jdk.encher.dto.StatsDTO;
 import com.jdk.encher.dto.UtilisateurDTO;
 import com.jdk.encher.entity.Utilisateur;
 import com.jdk.encher.repository.UtilisateurRepository;
-import com.jdk.encher.repository.EncherRepository;
+import com.jdk.encher.repository.EnchereRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class AdminService {
 
     private final UtilisateurRepository utilisateurRepository;
-    private final EncherRepository encherRepository;
+    private final EnchereRepository enchereRepository;
 
     public StatsDTO getStatistics() {
         long totalUsers = utilisateurRepository.count();
-        long totalProducts = encherRepository.count();
+        long totalProducts = enchereRepository.count();
         double totalRevenue = 0.0; // À calculer selon votre logique
         int creditsPurchased = 0; // À calculer selon votre logique
 

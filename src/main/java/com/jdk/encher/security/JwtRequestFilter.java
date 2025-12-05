@@ -52,9 +52,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
                 if (jwtUtil.validateToken(jwtToken, username)) {
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -62,18 +61,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             }
 
-        } catch (ExpiredJwtException ex) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("⚠️ Token expiré");
-            return;
-        } catch (SignatureException | MalformedJwtException ex) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("❌ Token invalide");
-            return;
         } catch (Exception ex) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("🚨 Erreur d’authentification JWT : " + ex.getMessage());
-            return;
+            // ⚠️ En cas d'erreur (token expiré, malformé, user non trouvé...), on ne bloque
+            // pas la requête.
+            // On nettoie le contexte de sécurité et on laisse le filtre suivant décider
+            // (401 si endpoint protégé, ou succès si public).
+            logger.warn("Authentication failed: " + ex.getMessage());
+            SecurityContextHolder.clearContext();
         }
 
         chain.doFilter(request, response);

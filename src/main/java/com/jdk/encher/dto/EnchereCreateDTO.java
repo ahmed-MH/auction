@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class EncherCreateDTO {
+public class EnchereCreateDTO {
     private String nomProduit;
     private String description;
     private LocalDateTime dateDebut;

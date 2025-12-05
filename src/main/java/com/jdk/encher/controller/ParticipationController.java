@@ -19,15 +19,17 @@ public class ParticipationController {
 
     /**
      * Ajouter ou mettre à jour une participation à une enchère
-     * POST /api/participations/enchere/{encherId}/utilisateur/{utilisateurId}?montant=XXX
+     * POST
+     * /api/participations/enchere/{encherId}/utilisateur/{utilisateurId}?montant=XXX
      */
-    @PostMapping("/enchere/{encherId}/utilisateur/{utilisateurId}")
+    @PostMapping("/enchere/{enchereId}/utilisateur/{utilisateurId}")
     public ResponseEntity<?> ajouterParticipation(
-            @PathVariable Long encherId,
+            @PathVariable Long enchereId,
             @PathVariable Long utilisateurId,
             @RequestParam Double montant) {
         try {
-            ParticipationDTO participation = participationService.ajouterParticipation(encherId, utilisateurId, montant);
+            ParticipationDTO participation = participationService.ajouterParticipation(enchereId, utilisateurId,
+                    montant);
             return ResponseEntity.status(HttpStatus.CREATED).body(participation);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -38,9 +40,9 @@ public class ParticipationController {
      * Obtenir toutes les participations d'une enchère
      * GET /api/participations/enchere/{encherId}
      */
-    @GetMapping("/enchere/{encherId}")
-    public ResponseEntity<List<ParticipationDTO>> getParticipationsByEncher(@PathVariable Long encherId) {
-        List<ParticipationDTO> participations = participationService.getParticipationsByEncher(encherId);
+    @GetMapping("/enchere/{enchereId}")
+    public ResponseEntity<List<ParticipationDTO>> getParticipationsByEnchere(@PathVariable Long enchereId) {
+        List<ParticipationDTO> participations = participationService.getParticipationsByEnchere(enchereId);
         return ResponseEntity.ok(participations);
     }
 
@@ -58,12 +60,12 @@ public class ParticipationController {
      * Obtenir une participation spécifique
      * GET /api/participations/enchere/{encherId}/utilisateur/{utilisateurId}
      */
-    @GetMapping("/enchere/{encherId}/utilisateur/{utilisateurId}")
+    @GetMapping("/enchere/{enchereId}/utilisateur/{utilisateurId}")
     public ResponseEntity<?> getParticipation(
-            @PathVariable Long encherId,
+            @PathVariable Long enchereId,
             @PathVariable Long utilisateurId) {
         try {
-            ParticipationDTO participation = participationService.getParticipation(encherId, utilisateurId);
+            ParticipationDTO participation = participationService.getParticipation(enchereId, utilisateurId);
             return ResponseEntity.ok(participation);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -85,13 +87,14 @@ public class ParticipationController {
     }
 
     /**
-     * Obtenir le gagnant actuel d'une enchère (participation avec le montant le plus élevé)
+     * Obtenir le gagnant actuel d'une enchère (participation avec le montant le
+     * plus élevé)
      * GET /api/participations/enchere/{encherId}/gagnant
      */
-    @GetMapping("/enchere/{encherId}/gagnant")
-    public ResponseEntity<?> getGagnantActuel(@PathVariable Long encherId) {
+    @GetMapping("/enchere/{enchereId}/gagnant")
+    public ResponseEntity<?> getGagnantActuel(@PathVariable Long enchereId) {
         try {
-            ParticipationDTO gagnant = participationService.getGagnantActuel(encherId);
+            ParticipationDTO gagnant = participationService.getGagnantActuel(enchereId);
             return ResponseEntity.ok(gagnant);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -102,9 +105,9 @@ public class ParticipationController {
      * Compter le nombre de participations pour une enchère
      * GET /api/participations/enchere/{encherId}/count
      */
-    @GetMapping("/enchere/{encherId}/count")
-    public ResponseEntity<Long> countParticipations(@PathVariable Long encherId) {
-        long count = participationService.countParticipations(encherId);
+    @GetMapping("/enchere/{enchereId}/count")
+    public ResponseEntity<Long> countParticipations(@PathVariable Long enchereId) {
+        long count = participationService.countParticipations(enchereId);
         return ResponseEntity.ok(count);
     }
 
@@ -112,9 +115,9 @@ public class ParticipationController {
      * Obtenir le montant maximum pour une enchère
      * GET /api/participations/enchere/{encherId}/montant-max
      */
-    @GetMapping("/enchere/{encherId}/montant-max")
-    public ResponseEntity<Double> getMontantMax(@PathVariable Long encherId) {
-        Double montantMax = participationService.getMontantMax(encherId);
+    @GetMapping("/enchere/{enchereId}/montant-max")
+    public ResponseEntity<Double> getMontantMax(@PathVariable Long enchereId) {
+        Double montantMax = participationService.getMontantMax(enchereId);
         return ResponseEntity.ok(montantMax);
     }
 
@@ -136,9 +139,9 @@ public class ParticipationController {
      * Supprimer toutes les participations d'une enchère
      * DELETE /api/participations/enchere/{encherId}
      */
-    @DeleteMapping("/enchere/{encherId}")
-    public ResponseEntity<Void> supprimerParticipationsByEncher(@PathVariable Long encherId) {
-        participationService.supprimerParticipationsByEncher(encherId);
+    @DeleteMapping("/enchere/{enchereId}")
+    public ResponseEntity<Void> supprimerParticipationsByEnchere(@PathVariable Long enchereId) {
+        participationService.supprimerParticipationsByEnchere(enchereId);
         return ResponseEntity.noContent().build();
     }
 }

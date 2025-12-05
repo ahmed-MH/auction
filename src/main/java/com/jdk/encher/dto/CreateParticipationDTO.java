@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class CreateParticipationDTO {
 
     @NotNull(message = "L'ID de l'enchère est obligatoire")
-    private Long encherId;
+    private Long enchereId;
 
     @NotNull(message = "L'ID de l'utilisateur est obligatoire")
     private Long utilisateurId;

@@ -41,7 +41,7 @@ public class Utilisateur implements UserDetails {
     private boolean etatCompte = true; // true = actif, false = désactivé
 
     @OneToMany(mappedBy = "createur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Encher> enchersDefinies;
+    private List<Enchere> encheresDefinies;
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Paiement> paiementsEffectues;
@@ -145,12 +145,12 @@ public class Utilisateur implements UserDetails {
         this.etatCompte = etatCompte;
     }
 
-    public List<Encher> getEnchersDefinies() {
-        return enchersDefinies;
+    public List<Enchere> getEncheresDefinies() {
+        return encheresDefinies;
     }
 
-    public void setEnchersDefinies(List<Encher> enchersDefinies) {
-        this.enchersDefinies = enchersDefinies;
+    public void setEncheresDefinies(List<Enchere> encheresDefinies) {
+        this.encheresDefinies = encheresDefinies;
     }
 
     public List<Paiement> getPaiementsEffectues() {

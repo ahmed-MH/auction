@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "enchers")
+@Table(name = "encheres")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Encher {
+public class Enchere {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +43,7 @@ public class Encher {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatutEncher statut;
+    private StatutEnchere statut;
 
     @ManyToOne
     @JoinColumn(name = "categorie_id", nullable = false)
@@ -57,14 +57,14 @@ public class Encher {
     @JoinColumn(name = "createur_id")
     private Utilisateur createur;
 
-    @OneToMany(mappedBy = "encher", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "enchere", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Participation> participations;
 
-    @OneToOne(mappedBy = "encher", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "enchere", cascade = CascadeType.ALL)
     private Historique historique;
 
-    @OneToMany(mappedBy = "encher", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "enchere", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Image> images;
 
@@ -124,11 +124,11 @@ public class Encher {
         this.montantActuel = montantActuel;
     }
 
-    public StatutEncher getStatut() {
+    public StatutEnchere getStatut() {
         return statut;
     }
 
-    public void setStatut(StatutEncher statut) {
+    public void setStatut(StatutEnchere statut) {
         this.statut = statut;
     }
 

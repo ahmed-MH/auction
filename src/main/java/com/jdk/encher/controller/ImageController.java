@@ -27,15 +27,15 @@ public class ImageController {
     }
 
     @Operation(summary = "Lister les images d’une enchère")
-    @GetMapping("/encher/{encherId}")
-    public ResponseEntity<List<Image>> getImagesByEncher(@PathVariable Long encherId) {
-        return ResponseEntity.ok(imageService.getImagesByEncher(encherId));
+    @GetMapping("/enchere/{enchereId}")
+    public ResponseEntity<List<Image>> getImagesByEnchere(@PathVariable Long enchereId) {
+        return ResponseEntity.ok(imageService.getImagesByEnchere(enchereId));
     }
 
     @Operation(summary = "Ajouter une image à une enchère")
-    @PostMapping("/encher/{encherId}")
-    public ResponseEntity<Image> addImageToEncher(@PathVariable Long encherId, @Valid @RequestBody Image image) {
-        return ResponseEntity.ok(imageService.addImageToEncher(encherId, image));
+    @PostMapping("/enchere/{enchereId}")
+    public ResponseEntity<Image> addImageToEnchere(@PathVariable Long enchereId, @Valid @RequestBody Image image) {
+        return ResponseEntity.ok(imageService.addImageToEnchere(enchereId, image));
     }
 
     @Operation(summary = "Supprimer une image")

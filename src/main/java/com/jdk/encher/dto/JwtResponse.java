@@ -17,4 +17,5 @@ public class JwtResponse {
     private String email;
     private String nom;
     private String role;
+    private int soldeCredit;
 }

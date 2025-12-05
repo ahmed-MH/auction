@@ -1,6 +1,5 @@
 package com.jdk.encher.service;
 
-import com.jdk.encher.entity.Utilisateur;
 import com.jdk.encher.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

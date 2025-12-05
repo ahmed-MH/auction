@@ -7,7 +7,6 @@ import com.jdk.encher.dto.SignUpRequest;
 import com.jdk.encher.entity.Role;
 import com.jdk.encher.entity.Utilisateur;
 import com.jdk.encher.repository.UtilisateurRepository;
-import com.jdk.encher.service.CustomUserDetailsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,9 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 @Tag(name = "Authentication", description = "Gestion de l'authentification")
 @RestController
@@ -44,16 +41,14 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
+                        loginRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         Utilisateur utilisateur = utilisateurRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        String jwt = jwtUtil.generateToken(utilisateur.getEmail());
+        String jwt = jwtUtil.generateToken(utilisateur.getEmail(), utilisateur.getRole().name());
 
         return ResponseEntity.ok(new JwtResponse(
                 jwt,
@@ -61,8 +56,8 @@ public class AuthController {
                 utilisateur.getId(),
                 utilisateur.getEmail(),
                 utilisateur.getNom(),
-                utilisateur.getRole().name()
-        ));
+                utilisateur.getRole().name(),
+                utilisateur.getSoldeCredit()));
     }
 
     @Operation(summary = "Inscription d'un utilisateur")
@@ -81,6 +76,7 @@ public class AuthController {
         utilisateur.setEmail(signUpRequest.getEmail());
         utilisateur.setMotDePasse(passwordEncoder.encode(signUpRequest.getPassword()));
         utilisateur.setEtatCompte(true);
+        utilisateur.setSoldeCredit(0);
 
         // Mapper les rôles reçus
         if (signUpRequest.getRoles() != null && !signUpRequest.getRoles().isEmpty()) {
@@ -99,8 +95,8 @@ public class AuthController {
                 "id", savedUser.getId(),
                 "nom", savedUser.getNom(),
                 "email", savedUser.getEmail(),
-                "role", savedUser.getRole().name()
-        ));
+                "role", savedUser.getRole().name(),
+                "soldeCredit", savedUser.getSoldeCredit()));
 
         return ResponseEntity.ok(successResponse);
     }

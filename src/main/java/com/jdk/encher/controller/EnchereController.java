@@ -1,63 +1,57 @@
 package com.jdk.encher.controller;
 
-import com.jdk.encher.dto.EncherCreateDTO;
-import com.jdk.encher.dto.EncherResponseDTO;
-import com.jdk.encher.dto.EncherUpdateDTO;
-import com.jdk.encher.entity.Encher;
-import com.jdk.encher.entity.Image;
-import com.jdk.encher.service.EncherService;
+import com.jdk.encher.dto.EnchereCreateDTO;
+import com.jdk.encher.dto.EnchereResponseDTO;
+import com.jdk.encher.dto.EnchereUpdateDTO;
+import com.jdk.encher.service.EnchereService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/enchers")
+@RequestMapping("/api/encheres")
 @CrossOrigin("*")
 public class EnchereController {
 
-    private final EncherService encherService;
+    private final EnchereService enchereService;
 
     // -----------------------------------------------------
     // 🔹 GET ALL ENCHERES
     // -----------------------------------------------------
     @GetMapping
-    public ResponseEntity<List<EncherResponseDTO>> getAll() {
-        System.out.println(encherService.getAllEncheres());
-        return ResponseEntity.ok(encherService.getAllEncheres());
+    public ResponseEntity<List<EnchereResponseDTO>> getAll() {
+        System.out.println(enchereService.getAllEncheres());
+        return ResponseEntity.ok(enchereService.getAllEncheres());
     }
 
     // -----------------------------------------------------
     // 🔹 GET ENCHERE BY ID
     // -----------------------------------------------------
     @GetMapping("/{id}")
-    public ResponseEntity<EncherResponseDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(encherService.checkAndCloseEnchere(id));
+    public ResponseEntity<EnchereResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(enchereService.checkAndCloseEnchere(id));
     }
-
 
     // -----------------------------------------------------
     // 🔹 CREATE ENCHERE
     // -----------------------------------------------------
     @PostMapping
-    public ResponseEntity<EncherResponseDTO> create(@RequestBody EncherCreateDTO dto) {
-        return ResponseEntity.ok(encherService.createEnchere(dto));
+    public ResponseEntity<EnchereResponseDTO> create(@RequestBody EnchereCreateDTO dto) {
+        return ResponseEntity.ok(enchereService.createEnchere(dto));
     }
 
     // -----------------------------------------------------
     // 🔹 UPDATE ENCHERE
     // -----------------------------------------------------
     @PutMapping("/{id}")
-    public ResponseEntity<EncherResponseDTO> update(
+    public ResponseEntity<EnchereResponseDTO> update(
             @PathVariable Long id,
-            @RequestBody EncherUpdateDTO dto
-    ) {
+            @RequestBody EnchereUpdateDTO dto) {
         // Convert to DTO
-        return ResponseEntity.ok(encherService.updateEnchereDTO(id, dto));
+        return ResponseEntity.ok(enchereService.updateEnchereDTO(id, dto));
     }
 
     // -----------------------------------------------------
@@ -65,7 +59,7 @@ public class EnchereController {
     // -----------------------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        encherService.deleteEnchere(id);
+        enchereService.deleteEnchere(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -74,19 +68,20 @@ public class EnchereController {
     // -----------------------------------------------------
     @GetMapping("/{id}/images")
     public ResponseEntity<List<String>> getImages(@PathVariable Long id) {
-        return ResponseEntity.ok(encherService.getImagesByEnchere(id));
+        return ResponseEntity.ok(enchereService.getImagesByEnchere(id));
     }
+
     // -----------------------------------------------------
     // 🔹 GET ENCHERES BY CATEGORIE
     // -----------------------------------------------------
     @GetMapping("/categorie/{categorieId}")
-    public ResponseEntity<List<EncherResponseDTO>> getByCategorie(@PathVariable Long categorieId) {
-        return ResponseEntity.ok(encherService.getEncheresByCategorie(categorieId));
+    public ResponseEntity<List<EnchereResponseDTO>> getByCategorie(@PathVariable Long categorieId) {
+        return ResponseEntity.ok(enchereService.getEncheresByCategorie(categorieId));
     }
 
     @GetMapping("/utilisateur/{id}")
-    public ResponseEntity<List<EncherResponseDTO>> getByUtilisateur(@PathVariable Long id) {
-        return ResponseEntity.ok(encherService.getEnchersByUtilisateur(id));
+    public ResponseEntity<List<EnchereResponseDTO>> getByUtilisateur(@PathVariable Long id) {
+        return ResponseEntity.ok(enchereService.getEnchersByUtilisateur(id));
     }
 
 }

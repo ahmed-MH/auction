@@ -3,10 +3,10 @@ package com.jdk.encher.service;
 import com.jdk.encher.dto.CreateParticipationDTO;
 import com.jdk.encher.dto.ParticipationDTO;
 import com.jdk.encher.dto.UpdateParticipationDTO;
-import com.jdk.encher.entity.Encher;
+import com.jdk.encher.entity.Enchere;
 import com.jdk.encher.entity.Participation;
 import com.jdk.encher.entity.Utilisateur;
-import com.jdk.encher.repository.EncherRepository;
+import com.jdk.encher.repository.EnchereRepository;
 import com.jdk.encher.repository.ParticipationRepository;
 import com.jdk.encher.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class ParticipationService {
 
     private final ParticipationRepository participationRepository;
-    private final EncherRepository encherRepository;
+    private final EnchereRepository enchereRepository;
     private final UtilisateurRepository utilisateurRepository;
 
     /**
@@ -30,29 +30,57 @@ public class ParticipationService {
     @Transactional
     public ParticipationDTO ajouterParticipation(CreateParticipationDTO createDTO) {
         // Vérifier que l'enchère existe
-        Encher encher = encherRepository.findById(createDTO.getEncherId())
-                .orElseThrow(() -> new RuntimeException("Enchère non trouvée avec l'ID: " + createDTO.getEncherId()));
+        Enchere enchere = enchereRepository.findById(createDTO.getEnchereId())
+                .orElseThrow(() -> new RuntimeException("Enchère non trouvée avec l'ID: " + createDTO.getEnchereId()));
 
         // Vérifier que l'utilisateur existe
         Utilisateur utilisateur = utilisateurRepository.findById(createDTO.getUtilisateurId())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID: " + createDTO.getUtilisateurId()));
+                .orElseThrow(() -> new RuntimeException(
+                        "Utilisateur non trouvé avec l'ID: " + createDTO.getUtilisateurId()));
 
         // Vérifier que le montant est supérieur au montant actuel
-        if (createDTO.getMontant() <= encher.getMontantActuel()) {
+        if (createDTO.getMontant() <= enchere.getMontantActuel()) {
             throw new RuntimeException("Le montant (" + createDTO.getMontant() +
-                    ") doit être supérieur au montant actuel (" + encher.getMontantActuel() + ")");
+                    ") doit être supérieur au montant actuel (" + enchere.getMontantActuel() + ")");
         }
 
-        // Créer la participation
+        // 1. Vérifier que l'utilisateur a assez de crédits
+        if (utilisateur.getSoldeCredit() < createDTO.getMontant()) {
+            throw new RuntimeException("Solde insuffisant ! Votre solde : " + utilisateur.getSoldeCredit());
+        }
+
+        // 2. Gérer le remboursement du précédent enchérisseur (si existe)
+        List<Participation> participations = participationRepository.findByEnchereId(enchere.getId());
+
+        if (!participations.isEmpty()) {
+            // Trouver le meilleur enchérisseur actuel (celui avec le montant max)
+            Participation bestParticipation = participations.stream()
+                    .max((p1, p2) -> Double.compare(p1.getMontant(), p2.getMontant()))
+                    .orElse(null);
+
+            if (bestParticipation != null) {
+                Utilisateur previousUser = bestParticipation.getUtilisateur();
+                // Rembourser l'ancien utilisateur
+                int montantRemboursement = bestParticipation.getMontant().intValue();
+                previousUser.setSoldeCredit(previousUser.getSoldeCredit() + montantRemboursement);
+                utilisateurRepository.save(previousUser);
+            }
+        }
+
+        // 3. Déduire le montant du nouvel utilisateur
+        utilisateur.setSoldeCredit(utilisateur.getSoldeCredit() - createDTO.getMontant().intValue());
+        utilisateurRepository.save(utilisateur);
+
+        // 4. Créer la participation
         Participation participation = Participation.builder()
-                .encher(encher)
+                .enchere(enchere)
                 .utilisateur(utilisateur)
                 .montant(createDTO.getMontant())
                 .build();
 
-        // Mettre à jour le montant actuel de l'enchère
-        encher.setMontantActuel(createDTO.getMontant());
-        encherRepository.save(encher);
+        // 5. Mettre à jour le montant actuel de l'enchère
+        enchere.setMontantActuel(createDTO.getMontant());
+        enchereRepository.save(enchere);
 
         Participation savedParticipation = participationRepository.save(participation);
         return convertToDTO(savedParticipation);
@@ -62,8 +90,8 @@ public class ParticipationService {
      * Ajouter ou mettre à jour une participation (méthode simplifiée)
      */
     @Transactional
-    public ParticipationDTO ajouterParticipation(Long encherId, Long utilisateurId, Double montant) {
-        CreateParticipationDTO createDTO = new CreateParticipationDTO(encherId, utilisateurId, montant);
+    public ParticipationDTO ajouterParticipation(Long enchereId, Long utilisateurId, Double montant) {
+        CreateParticipationDTO createDTO = new CreateParticipationDTO(enchereId, utilisateurId, montant);
         return ajouterParticipation(createDTO);
     }
 
@@ -75,17 +103,17 @@ public class ParticipationService {
         Participation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new RuntimeException("Participation non trouvée avec l'ID: " + participationId));
 
-        Encher encher = participation.getEncher();
+        Enchere enchere = participation.getEnchere();
 
         // Vérifier que le nouveau montant est supérieur au montant actuel
-        if (updateDTO.getMontant() <= encher.getMontantActuel()) {
+        if (updateDTO.getMontant() <= enchere.getMontantActuel()) {
             throw new RuntimeException("Le nouveau montant doit être supérieur au montant actuel");
         }
 
         participation.setMontant(updateDTO.getMontant());
-        encher.setMontantActuel(updateDTO.getMontant());
+        enchere.setMontantActuel(updateDTO.getMontant());
 
-        encherRepository.save(encher);
+        enchereRepository.save(enchere);
         Participation updatedParticipation = participationRepository.save(participation);
 
         return convertToDTO(updatedParticipation);
@@ -95,8 +123,8 @@ public class ParticipationService {
      * Obtenir toutes les participations d'une enchère
      */
     @Transactional(readOnly = true)
-    public List<ParticipationDTO> getParticipationsByEncher(Long encherId) {
-        return participationRepository.findByEncherId(encherId)
+    public List<ParticipationDTO> getParticipationsByEnchere(Long enchereId) {
+        return participationRepository.findByEnchereId(enchereId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -117,9 +145,10 @@ public class ParticipationService {
      * Obtenir une participation spécifique (par enchère et utilisateur)
      */
     @Transactional(readOnly = true)
-    public ParticipationDTO getParticipation(Long encherId, Long utilisateurId) {
-        Participation participation = participationRepository.findByEncherIdAndUtilisateurId(encherId, utilisateurId)
-                .orElseThrow(() -> new RuntimeException("Participation non trouvée pour cette enchère et cet utilisateur"));
+    public ParticipationDTO getParticipation(Long enchereId, Long utilisateurId) {
+        Participation participation = participationRepository.findByEnchereIdAndUtilisateurId(enchereId, utilisateurId)
+                .orElseThrow(
+                        () -> new RuntimeException("Participation non trouvée pour cette enchère et cet utilisateur"));
         return convertToDTO(participation);
     }
 
@@ -137,8 +166,8 @@ public class ParticipationService {
      * Obtenir le gagnant actuel (participation avec le montant le plus élevé)
      */
     @Transactional(readOnly = true)
-    public ParticipationDTO getGagnantActuel(Long encherId) {
-        List<Participation> participations = participationRepository.findTopParticipationsByEncherId(encherId);
+    public ParticipationDTO getGagnantActuel(Long enchereId) {
+        List<Participation> participations = participationRepository.findTopParticipationsByEnchereId(enchereId);
         if (participations.isEmpty()) {
             throw new RuntimeException("Aucune participation trouvée pour cette enchère");
         }
@@ -149,8 +178,8 @@ public class ParticipationService {
      * Obtenir les dernières participations d'une enchère
      */
     @Transactional(readOnly = true)
-    public List<ParticipationDTO> getRecentParticipations(Long encherId) {
-        return participationRepository.findRecentParticipationsByEncherId(encherId)
+    public List<ParticipationDTO> getRecentParticipations(Long enchereId) {
+        return participationRepository.findRecentParticipationsByEnchereId(enchereId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -160,16 +189,16 @@ public class ParticipationService {
      * Compter le nombre de participations pour une enchère
      */
     @Transactional(readOnly = true)
-    public long countParticipations(Long encherId) {
-        return participationRepository.countByEncherId(encherId);
+    public long countParticipations(Long enchereId) {
+        return participationRepository.countByEnchereId(enchereId);
     }
 
     /**
      * Obtenir le montant maximum pour une enchère
      */
     @Transactional(readOnly = true)
-    public Double getMontantMax(Long encherId) {
-        return participationRepository.findMaxMontantByEncherId(encherId)
+    public Double getMontantMax(Long enchereId) {
+        return participationRepository.findMaxMontantByEnchereId(enchereId)
                 .orElse(0.0);
     }
 
@@ -177,8 +206,8 @@ public class ParticipationService {
      * Vérifier si un utilisateur a participé à une enchère
      */
     @Transactional(readOnly = true)
-    public boolean hasUserParticipated(Long encherId, Long utilisateurId) {
-        return participationRepository.existsByEncherIdAndUtilisateurId(encherId, utilisateurId);
+    public boolean hasUserParticipated(Long enchereId, Long utilisateurId) {
+        return participationRepository.existsByEnchereIdAndUtilisateurId(enchereId, utilisateurId);
     }
 
     /**
@@ -196,8 +225,8 @@ public class ParticipationService {
      * Supprimer toutes les participations d'une enchère
      */
     @Transactional
-    public void supprimerParticipationsByEncher(Long encherId) {
-        participationRepository.deleteByEncherId(encherId);
+    public void supprimerParticipationsByEnchere(Long enchereId) {
+        participationRepository.deleteByEnchereId(enchereId);
     }
 
     /**
@@ -206,8 +235,8 @@ public class ParticipationService {
     private ParticipationDTO convertToDTO(Participation participation) {
         return ParticipationDTO.builder()
                 .id(participation.getId())
-                .encherId(participation.getEncher().getId())
-                .nomProduit(participation.getEncher().getNomProduit())
+                .enchereId(participation.getEnchere().getId())
+                .nomProduit(participation.getEnchere().getNomProduit())
                 .utilisateurId(participation.getUtilisateur().getId())
                 .nomUtilisateur(participation.getUtilisateur().getNom())
                 .emailUtilisateur(participation.getUtilisateur().getEmail())

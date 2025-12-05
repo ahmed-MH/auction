@@ -1,7 +1,5 @@
 package com.jdk.encher.entity;
 
-import com.jdk.encher.entity.Encher;
-import com.jdk.encher.entity.Utilisateur;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,9 +19,9 @@ public class Participation {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "encher_id", nullable = false)
+    @JoinColumn(name = "enchere_id", nullable = false)
     @NotNull
-    private Encher encher;
+    private Enchere enchere;
 
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", nullable = false)
@@ -50,12 +48,12 @@ public class Participation {
         this.id = id;
     }
 
-    public Encher getEncher() {
-        return encher;
+    public Enchere getEnchere() {
+        return enchere;
     }
 
-    public void setEncher(Encher encher) {
-        this.encher = encher;
+    public void setEnchere(Enchere enchere) {
+        this.enchere = enchere;
     }
 
     public Utilisateur getUtilisateur() {

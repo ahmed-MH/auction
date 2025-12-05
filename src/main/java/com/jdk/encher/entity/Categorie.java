@@ -26,7 +26,7 @@ public class Categorie {
     // Relation optionnelle vers les enchères
     @OneToMany(mappedBy = "categorie", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<Encher> encheres;
+    private List<Enchere> encheres;
 
     @Override
     public String toString() {

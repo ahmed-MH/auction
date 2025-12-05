@@ -13,15 +13,21 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY = "mySuperSecretKeyThatIsDefinitelyLongEnoughForHS512AlgorithmAndSecure1234!";
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret}")
+    private String secretKey;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
     // ✅ Extraire username (subject)
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // ✅ Extraire le rôle
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     // ✅ Extraire expiration
@@ -42,7 +48,7 @@ public class JwtUtil {
                     .verifyWith((SecretKey) getSigningKey())
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload();  // Changed from getBody() to getPayload()
+                    .getPayload();
         } catch (JwtException e) {
             throw new RuntimeException("JWT invalide ou expiré", e);
         }
@@ -53,9 +59,10 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    // ✅ Générer token
-    public String generateToken(String username) {
+    // ✅ Générer token avec Rôle
+    public String generateToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
         return createToken(claims, username);
     }
 
@@ -64,7 +71,7 @@ public class JwtUtil {
                 .claims(claims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 ))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 heures
                 .signWith((SecretKey) getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }

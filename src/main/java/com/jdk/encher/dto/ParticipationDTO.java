@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ParticipationDTO {
     private Long id;
-    private Long encherId;
+    private Long enchereId;
     private String nomProduit;
     private Long utilisateurId;
     private String nomUtilisateur;

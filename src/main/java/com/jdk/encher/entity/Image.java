@@ -21,7 +21,7 @@ public class Image {
     private String url; // le chemin ou nom du fichier de l’image
 
     @ManyToOne
-    @JoinColumn(name = "encher_id")
+    @JoinColumn(name = "enchere_id")
     @JsonBackReference
-    private Encher encher;
+    private Enchere enchere;
 }

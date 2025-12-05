@@ -25,38 +25,59 @@ public class Historique {
     private double montant;
 
     @OneToOne
-    @JoinColumn(name = "encher", unique = true)
-    private Encher encher;
+    @JoinColumn(name = "enchere_id", unique = true)
+    private Enchere enchere;
 
     // Constructeurs
-    public Historique() {}
+    public Historique() {
+    }
 
-    public Historique(Utilisateur acheteur, Utilisateur vendeur, double montant, Encher encher) {
+    public Historique(Utilisateur acheteur, Utilisateur vendeur, double montant, Enchere enchere) {
         this.acheteur = acheteur;
         this.vendeur = vendeur;
         this.montant = montant;
-        this.encher = encher;
+        this.enchere = enchere;
     }
-
 
     // Getters & setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Utilisateur getAcheteur() { return acheteur; }
-    public void setAcheteur(Utilisateur acheteur) { this.acheteur = acheteur; }
-
-    public Utilisateur getVendeur() { return vendeur; }
-    public void setVendeur(Utilisateur vendeur) { this.vendeur = vendeur; }
-
-    public double getMontant() { return montant; }
-    public void setMontant(double montant) { this.montant = montant; }
-
-    public Encher getEncher() {
-        return encher;
+    public Long getId() {
+        return id;
     }
-    public void setEncher(Encher encher) {
-        this.encher = encher;
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Utilisateur getAcheteur() {
+        return acheteur;
+    }
+
+    public void setAcheteur(Utilisateur acheteur) {
+        this.acheteur = acheteur;
+    }
+
+    public Utilisateur getVendeur() {
+        return vendeur;
+    }
+
+    public void setVendeur(Utilisateur vendeur) {
+        this.vendeur = vendeur;
+    }
+
+    public double getMontant() {
+        return montant;
+    }
+
+    public void setMontant(double montant) {
+        this.montant = montant;
+    }
+
+    public Enchere getEnchere() {
+        return enchere;
+    }
+
+    public void setEnchere(Enchere enchere) {
+        this.enchere = enchere;
     }
 
 }
