@@ -35,15 +35,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/encheres/**").permitAll()
+                        .requestMatchers("/api/enchers/**").permitAll()
                         .requestMatchers("/api/images/**").permitAll()
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/participations/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -56,7 +58,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000", // ton front React
-                "http://127.0.0.1:3000"));
+                "http://127.0.0.1:3000"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));
