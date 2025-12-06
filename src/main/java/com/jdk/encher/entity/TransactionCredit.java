@@ -24,6 +24,9 @@ public class TransactionCredit {
     @NotBlank
     private String modePaiement; // exemple : "Carte Bancaire", "PayPal", "Virement"
 
+    @Column(nullable = true)
+    private String paymentIntentId; // ID du PaymentIntent Stripe
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatutPaiement statut;
@@ -69,5 +72,13 @@ public class TransactionCredit {
 
     public void setUtilisateur(Utilisateur utilisateur) {
         this.utilisateur = utilisateur;
+    }
+
+    public String getPaymentIntentId() {
+        return paymentIntentId;
+    }
+
+    public void setPaymentIntentId(String paymentIntentId) {
+        this.paymentIntentId = paymentIntentId;
     }
 }
