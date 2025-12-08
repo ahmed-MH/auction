@@ -102,9 +102,11 @@ public class AuthController {
         try {
             emailService.sendVerificationEmail(utilisateur.getEmail(), verificationCode);
         } catch (Exception e) {
-            // En dev, on log juste le code si l'envoi échoue (ex: pas de config SMTP)
+            // RETOURNER L'ERREUR AU FRONTEND pour le debug
             System.out.println("ERREUR EMAIL: " + e.getMessage());
-            System.out.println("CODE DE VERIFICATION POUR " + utilisateur.getEmail() + ": " + verificationCode);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Erreur envoi email: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
 
         Map<String, Object> successResponse = new HashMap<>();
