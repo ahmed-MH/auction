@@ -66,12 +66,15 @@ public class JwtUtil {
         return createToken(claims, username);
     }
 
+    @org.springframework.beans.factory.annotation.Value("${jwt.expiration}")
+    private long jwtExpiration;
+
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 heures
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith((SecretKey) getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }

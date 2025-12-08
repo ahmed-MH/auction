@@ -54,13 +54,13 @@ public class SecurityConfig {
     }
 
     // ✅ Autorise le frontend React local
+    @org.springframework.beans.factory.annotation.Value("${frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:3000", // ton front React
-                "http://127.0.0.1:3000"
-        ));
+        configuration.setAllowedOrigins(List.of(frontendUrl, "http://localhost:80"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));
