@@ -22,8 +22,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     // 🔴 404 - Entité non trouvée
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<Object> handleEntityNotFound(EntityNotFoundException ex, WebRequest request) {
+    @ExceptionHandler({EntityNotFoundException.class, org.springframework.security.core.userdetails.UsernameNotFoundException.class})
+    public ResponseEntity<Object> handleEntityNotFound(Exception ex, WebRequest request) {
         return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
