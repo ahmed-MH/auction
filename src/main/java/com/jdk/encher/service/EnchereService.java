@@ -4,6 +4,7 @@ import com.jdk.encher.dto.EnchereCreateDTO;
 import com.jdk.encher.dto.EnchereResponseDTO;
 import com.jdk.encher.dto.EnchereUpdateDTO;
 import com.jdk.encher.dto.ImageDTO;
+import com.jdk.encher.dto.ParticipationDTO;
 import com.jdk.encher.entity.*;
 import com.jdk.encher.repository.CategorieRepository;
 import com.jdk.encher.repository.EnchereRepository;
@@ -52,6 +53,23 @@ public class EnchereService {
                                 .map(Image::getUrl)
                                 .collect(Collectors.toList())
                         : new ArrayList<>())
+                .participations(enchere.getParticipations() != null
+                        ? enchere.getParticipations().stream().map(this::toParticipationDto).collect(Collectors.toList())
+                        : new ArrayList<>())
+                .nombreParticipants(enchere.getParticipations() != null ? enchere.getParticipations().size() : 0)
+                .build();
+    }
+
+    private ParticipationDTO toParticipationDto(Participation participation) {
+        return ParticipationDTO.builder()
+                .id(participation.getId())
+                .enchereId(participation.getEnchere().getId())
+                .nomProduit(participation.getEnchere().getNomProduit())
+                .utilisateurId(participation.getUtilisateur().getId())
+                .nomUtilisateur(participation.getUtilisateur().getNom())
+                .emailUtilisateur(participation.getUtilisateur().getEmail())
+                .montant(participation.getMontant())
+                .dateParticipation(participation.getDateParticipation())
                 .build();
     }
 
@@ -195,6 +213,18 @@ public class EnchereService {
     public void deleteEnchere(Long id) {
         Enchere existing = enchereRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Enchère introuvable ID : " + id));
+
+        // 💰 REFUND BLOCKED CREDITS TO PARTICIPANTS
+        if (existing.getParticipations() != null) {
+            for (Participation p : existing.getParticipations()) {
+                Utilisateur participant = p.getUtilisateur();
+                // Refund the blocked amount
+                if (p.getMontant() != null) {
+                    participant.setSoldeCredit(participant.getSoldeCredit() + p.getMontant().intValue());
+                    utilisateurRepository.save(participant);
+                }
+            }
+        }
 
         imageRepository.deleteAll(existing.getImages());
         enchereRepository.delete(existing);

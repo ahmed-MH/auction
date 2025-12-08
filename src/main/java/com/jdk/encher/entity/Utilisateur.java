@@ -40,6 +40,10 @@ public class Utilisateur implements UserDetails {
 
     private boolean etatCompte = true; // true = actif, false = désactivé
 
+    private String verificationCode;
+
+    private java.time.LocalDateTime verificationCodeExpiresAt;
+
     @OneToMany(mappedBy = "createur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Enchere> encheresDefinies;
 
@@ -175,5 +179,21 @@ public class Utilisateur implements UserDetails {
 
     public void setTransactionsEffectuees(List<TransactionCredit> transactionsEffectuees) {
         this.transactionsEffectuees = transactionsEffectuees;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public java.time.LocalDateTime getVerificationCodeExpiresAt() {
+        return verificationCodeExpiresAt;
+    }
+
+    public void setVerificationCodeExpiresAt(java.time.LocalDateTime verificationCodeExpiresAt) {
+        this.verificationCodeExpiresAt = verificationCodeExpiresAt;
     }
 }

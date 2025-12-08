@@ -31,4 +31,7 @@ public class EnchereResponseDTO {
     private Long gagnantId;
 
     private List<String> imageUrls;
+
+    private List<ParticipationDTO> participations;
+    private int nombreParticipants;
 }

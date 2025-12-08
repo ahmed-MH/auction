@@ -17,6 +17,23 @@ public class AdminService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final EnchereRepository enchereRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    public void createAdmin(com.jdk.encher.dto.SignUpRequest dto) {
+        if (utilisateurRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email déjà utilisé !");
+        }
+
+        Utilisateur admin = new Utilisateur();
+        admin.setNom(dto.getNom());
+        admin.setEmail(dto.getEmail());
+        admin.setMotDePasse(passwordEncoder.encode(dto.getPassword()));
+        admin.setRole(com.jdk.encher.entity.Role.ADMIN);
+        admin.setEtatCompte(true);
+        admin.setSoldeCredit(0);
+
+        utilisateurRepository.save(admin);
+    }
 
     public StatsDTO getStatistics() {
         long totalUsers = utilisateurRepository.count();

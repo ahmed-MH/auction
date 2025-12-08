@@ -55,4 +55,11 @@ public class AdminController {
         adminService.updateUserStatus(id, etatCompte);
         return ResponseEntity.ok().build();
     }
+    @Operation(summary = "Créer un nouvel administrateur")
+    @PostMapping("/admin/create")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> createAdmin(@RequestBody com.jdk.encher.dto.SignUpRequest request) {
+        adminService.createAdmin(request);
+        return ResponseEntity.ok().build();
+    }
 }

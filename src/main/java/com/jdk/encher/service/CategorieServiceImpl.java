@@ -73,12 +73,20 @@ public class CategorieServiceImpl implements CategorieService {
     public void deleteCategorie(Long id) {
         log.info("🗑️ Suppression catégorie ID={}", id);
 
-        if (!categorieRepository.existsById(id)) {
-            log.error("❌ Catégorie introuvable: ID={}", id);
-            throw new RuntimeException("Catégorie introuvable !");
+        Categorie categorie = categorieRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("❌ Catégorie introuvable: ID={}", id);
+                    return new RuntimeException("Catégorie introuvable !");
+                });
+
+        // 🛡️ SECURITY CHECK: Don't delete if it has auctions
+        if (categorie.getEncheres() != null && !categorie.getEncheres().isEmpty()) {
+            log.warn("❌ Impossible de supprimer la catégorie ID={} car elle contient {} enchères", id, categorie.getEncheres().size());
+            // Throwing a specific message that frontend can match
+            throw new RuntimeException("Impossible de supprimer : cette catégorie contient des enchères associées.");
         }
 
-        categorieRepository.deleteById(id);
+        categorieRepository.delete(categorie);
         log.info("✅ Catégorie supprimée avec succès");
     }
 

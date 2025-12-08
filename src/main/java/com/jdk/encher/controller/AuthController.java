@@ -32,6 +32,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.jdk.encher.service.EmailService emailService;
     private final JwtUtil jwtUtil;
 
     @Operation(summary = "Connexion d'un utilisateur")
@@ -47,6 +48,11 @@ public class AuthController {
 
         Utilisateur utilisateur = utilisateurRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        // Vérification si le compte est actif
+        if (!utilisateur.isEtatCompte()) {
+            return ResponseEntity.status(403).body(Map.of("message", "Compte non vérifié. Veuillez vérifier votre email."));
+        }
 
         String jwt = jwtUtil.generateToken(utilisateur.getEmail(), utilisateur.getRole().name());
 
@@ -65,7 +71,6 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
 
         if (utilisateurRepository.existsByEmail(signUpRequest.getEmail())) {
-            // On renvoie un JSON même pour l'erreur
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "Erreur : cet email est déjà utilisé !");
             return ResponseEntity.badRequest().body(errorResponse);
@@ -75,10 +80,15 @@ public class AuthController {
         utilisateur.setNom(signUpRequest.getNom());
         utilisateur.setEmail(signUpRequest.getEmail());
         utilisateur.setMotDePasse(passwordEncoder.encode(signUpRequest.getPassword()));
-        utilisateur.setEtatCompte(true);
+        
+        // Configuration pour la vérification
+        utilisateur.setEtatCompte(false); // Compte inactif par défaut
+        String verificationCode = String.format("%06d", new java.util.Random().nextInt(999999));
+        utilisateur.setVerificationCode(verificationCode);
+        utilisateur.setVerificationCodeExpiresAt(java.time.LocalDateTime.now().plusMinutes(15));
+        
         utilisateur.setSoldeCredit(0);
 
-        // Mapper les rôles reçus
         if (signUpRequest.getRoles() != null && !signUpRequest.getRoles().isEmpty()) {
             String roleStr = signUpRequest.getRoles().iterator().next().toUpperCase();
             utilisateur.setRole(Role.valueOf(roleStr));
@@ -86,19 +96,46 @@ public class AuthController {
             utilisateur.setRole(Role.USER);
         }
 
-        Utilisateur savedUser = utilisateurRepository.save(utilisateur);
+        utilisateurRepository.save(utilisateur);
 
-        // Réponse JSON pour le frontend
+        // Envoyer l'email
+        try {
+            emailService.sendVerificationEmail(utilisateur.getEmail(), verificationCode);
+        } catch (Exception e) {
+            // En dev, on log juste le code si l'envoi échoue (ex: pas de config SMTP)
+            System.out.println("ERREUR EMAIL: " + e.getMessage());
+            System.out.println("CODE DE VERIFICATION POUR " + utilisateur.getEmail() + ": " + verificationCode);
+        }
+
         Map<String, Object> successResponse = new HashMap<>();
-        successResponse.put("message", "Inscription réussie !");
-        successResponse.put("user", Map.of(
-                "id", savedUser.getId(),
-                "nom", savedUser.getNom(),
-                "email", savedUser.getEmail(),
-                "role", savedUser.getRole().name(),
-                "soldeCredit", savedUser.getSoldeCredit()));
-
+        successResponse.put("message", "Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.");
+        
         return ResponseEntity.ok(successResponse);
     }
 
+    @Operation(summary = "Vérification du compte")
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyAccount(@Valid @RequestBody com.jdk.encher.dto.VerifyRequest verifyRequest) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(verifyRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (utilisateur.isEtatCompte()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Le compte est déjà activé."));
+        }
+
+        if (utilisateur.getVerificationCode() == null || !utilisateur.getVerificationCode().equals(verifyRequest.getCode())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Code de vérification invalide."));
+        }
+
+        if (utilisateur.getVerificationCodeExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Le code de vérification a expiré."));
+        }
+
+        utilisateur.setEtatCompte(true);
+        utilisateur.setVerificationCode(null);
+        utilisateur.setVerificationCodeExpiresAt(null);
+        utilisateurRepository.save(utilisateur);
+
+        return ResponseEntity.ok(Map.of("message", "Compte vérifié avec succès ! Vous pouvez maintenant vous connecter."));
+    }
 }
